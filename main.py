@@ -574,7 +574,7 @@ class ChallengeAcceptButton(discord.ui.Button):
         await message_object.edit(content="", embed=em, view=view)
 
 
-@bot.slash_command(guild_ids=[416554372038656001])
+@bot.slash_command()
 async def rps(ctx, amount: float, user: discord.User):
     """Challenge someone to rock paper scissors!"""
     view = discord.ui.View(timeout=None)
