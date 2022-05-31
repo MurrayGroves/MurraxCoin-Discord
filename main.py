@@ -378,6 +378,7 @@ class GameState:
 
             self.challenger_choice = None
             self.target_choice = None
+            self.round += 1
 
             if self.challenger_score >= self.score_threshold/2 or self.target_score >= self.score_threshold/2:
                 winner = self.challenger if self.challenger_score > self.target_score else self.target
@@ -450,7 +451,6 @@ class RPSButton(discord.ui.Button):
             return
 
         if new_state:
-            current_games[self.game_id].round += 1
             if new_state[0] == 0:
                 await interaction.message.reply(f"That round was a tie!")
 
@@ -583,6 +583,10 @@ class ChallengeAcceptButton(discord.ui.Button):
 @bot.slash_command()
 async def rps(ctx, amount: float, user: discord.User):
     """Challenge someone to rock paper scissors!"""
+    if user.id == ctx.author.id:
+        await ctx.respond("You cannot play rock paper scissors with yourself!")
+        return
+        
     view = discord.ui.View(timeout=None)
 
     view.add_item(ChallengeAcceptButton(target=user.id, challenger=ctx.author.id, wager=amount))
@@ -682,7 +686,7 @@ async def address(ctx, user: discord.User = None):
     except:
         address = await createWallet(str(ctx.author.id))
 
-    await ctx.respond(f"<@{user.id}>'s address is: `{address}`")
+    await ctx.respond(f"<@{user}>'s address is: `{address}`")
 
 
 @bot.slash_command()
@@ -735,7 +739,7 @@ async def leaderboard(ctx):
             user = await bot.fetch_user(address)
             address = user.name + "#" + user.discriminator
 
-        except FileNotFoundError:
+        except:
             address = f"{account}"
             pass
 
