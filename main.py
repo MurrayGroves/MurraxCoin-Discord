@@ -70,12 +70,17 @@ class websocketSecure:
         self.url = url
 
     async def initiateConnection(self):
-        self.websocket = await websockets.connect(self.url)
+        try:
+            self.websocket = await websockets.connect(self.url)
+        except OSError:
+            raise TimeoutError
         await self.websocket.send(handshakePublicKeyStr)
         handshakeData = await self.websocket.recv()
+        print("Data: " + handshakeData)
         handshakeData = json.loads(handshakeData)
 
-        sessionKey = bytes.fromhex(handshakeData["sessionKey"])
+        sessionKey = base64.b64decode(handshakeData["sessionKey"].encode('ascii'))
+        #sessionKey = bytes.fromhex(handshakeData["sessionKey"])
         self.sessionKey = handshakeCipher.decrypt(sessionKey)
 
     @classmethod
@@ -92,20 +97,21 @@ class websocketSecure:
 
         raise TimeoutError
 
+
     async def recv(self):
         data = await self.websocket.recv()
         ciphertext, tag, nonce = data.split("|||")
-        ciphertext, tag, nonce = bytes.fromhex(ciphertext), bytes.fromhex(tag), bytes.fromhex(nonce)
+        ciphertext, tag, nonce = base64.b64decode(ciphertext).decode("ascii"), base64.b64decode(tag).decode("ascii"), base64.b64decode(nonce).decode("ascii")
         cipher = AES.new(self.sessionKey, AES.MODE_EAX, nonce)
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        plaintext = plaintext.decode("utf-8")
+        plaintext = plaintext.decode("ascii")
 
         return plaintext
 
     async def send(self, plaintext):
         cipher = AES.new(self.sessionKey, AES.MODE_EAX)
-        ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode("utf-8"))
-        await self.websocket.send(ciphertext.hex() + "|||" + tag.hex() + "|||" + cipher.nonce.hex())
+        ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode("ascii"))
+        await self.websocket.send(base64.b64encode(ciphertext).decode("ascii") + "|||" + base64.b64encode(tag).decode("ascii") + "|||" + base64.b64encode(cipher.nonce).decode("ascii"))
 
     async def close(self):
         await self.websocket.close()
