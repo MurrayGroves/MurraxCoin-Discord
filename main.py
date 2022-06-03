@@ -101,10 +101,10 @@ class websocketSecure:
     async def recv(self):
         data = await self.websocket.recv()
         ciphertext, tag, nonce = data.split("|||")
-        ciphertext, tag, nonce = base64.b64decode(ciphertext).decode("ascii"), base64.b64decode(tag).decode("ascii"), base64.b64decode(nonce).decode("ascii")
+        ciphertext, tag, nonce = base64.b64decode(ciphertext.encode("utf-8")), base64.b64decode(tag), base64.b64decode(nonce)
         cipher = AES.new(self.sessionKey, AES.MODE_EAX, nonce)
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        plaintext = plaintext.decode("ascii")
+        plaintext = plaintext.decode("utf-8")
 
         return plaintext
 
