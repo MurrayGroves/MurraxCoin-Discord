@@ -102,14 +102,14 @@ class websocketSecure:
         data = await self.websocket.recv()
         ciphertext, tag, nonce = data.split("|||")
         ciphertext, tag, nonce = base64.b64decode(ciphertext.encode("utf-8")), base64.b64decode(tag), base64.b64decode(nonce)
-        cipher = AES.new(self.sessionKey, AES.MODE_EAX, nonce)
+        cipher = AES.new(self.sessionKey, AES.MODE_GCM, nonce)
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
         plaintext = plaintext.decode("utf-8")
 
         return plaintext
 
     async def send(self, plaintext):
-        cipher = AES.new(self.sessionKey, AES.MODE_EAX)
+        cipher = AES.new(self.sessionKey, AES.MODE_GCM)
         ciphertext, tag = cipher.encrypt_and_digest(plaintext.encode("ascii"))
         await self.websocket.send(base64.b64encode(ciphertext).decode("ascii") + "|||" + base64.b64encode(tag).decode("ascii") + "|||" + base64.b64encode(cipher.nonce).decode("ascii"))
 
