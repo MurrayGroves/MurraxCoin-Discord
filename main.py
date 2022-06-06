@@ -32,7 +32,7 @@ import time
 
 from collections import Counter
 
-
+uri = "ws://murraxcoin.murraygrov.es:6969"
 storageDir = "storage/"
 
 
@@ -257,9 +257,14 @@ async def sendAlert(data):
 
 async def websocketPoolLoop():
     global websocketPool
+    global websocket
     while True:
         await asyncio.sleep(0.03)
         try:
+            if websocket.websocket.closed:
+                print("CLOSED")
+                websocket = await websocketSecure.connect(uri)
+
             resp = await asyncio.wait_for(websocket.recv(), 0.5)
             if prevRequest == "":
                 if json.loads(resp)["type"] == "sendAlert":
@@ -307,7 +312,6 @@ async def wsRequest(request):
 
 async def startup():
     global websocket
-    uri = "ws://murraxcoin.murraygrov.es:6969"
     websocket = await websocketSecure.connect(uri)
 
     asyncio.create_task(websocketPoolLoop())
