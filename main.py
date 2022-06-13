@@ -264,6 +264,8 @@ async def websocketPoolLoop():
             if websocket.websocket.closed:
                 print("CLOSED")
                 websocket = await websocketSecure.connect(uri)
+                while (not websocket.websocket.closed) and (not websocket.websocket.open): # While websocket is connecting
+                    await asyncio.sleep(0.03)
 
             resp = await asyncio.wait_for(websocket.recv(), 0.5)
             if prevRequest == "":
@@ -606,27 +608,24 @@ async def send(ctx, amount: float, user: discord.User):
     """Send MXC to someone. If you use it in a reply, you do not need to specify a recipient."""
     mentioned = False
 
-    if not user:
-        await ctx.respond("You must specify a recipient if not used in a reply.")
+    message_obj = await ctx.respond("Please wait...")
 
-    else:
-        with open(f"{storageDir}users.json") as f:
-            users = json.load(f)
 
-        try:
-            target = users[str(user.id)]
+    with open(f"{storageDir}users.json") as f:
+        users = json.load(f)
 
-        except:
-            target = createWallet(str(user.id))
+    try:
+        target = users[str(user.id)]
 
-        mentioned = True
+    except:
+        target = createWallet(str(user.id))
+
+    mentioned = True
 
     with open(f"{storageDir}users.json") as f:
         users = json.load(f)
 
     address = users[str(ctx.author.id)]
-
-    message_obj = await ctx.respond("Attempting transaction...")
 
     resp = await wsRequest(f'{{"type": "balance", "address": "{address}"}}')
     resp = json.loads(resp)
@@ -696,6 +695,8 @@ async def address(ctx, user: discord.User = None):
 @bot.slash_command()
 async def balance(ctx, user: discord.User = None):
     """Check someone's balance, defaults to you if no user is specified."""
+    message_obj = await ctx.respond("Please wait...")
+    
     if user:
         user = str(user.id)
 
@@ -716,7 +717,7 @@ async def balance(ctx, user: discord.User = None):
     else:
         balance = 0
 
-    await ctx.respond(f"<@{user}>'s balance: `{balance}` MXC")
+    await message_obj.edit_original_message(content=f"<@{user}>'s balance: `{balance}` MXC")
 
 
 @bot.slash_command()
@@ -727,6 +728,8 @@ async def ping(ctx):
 
 @bot.slash_command()
 async def leaderboard(ctx):
+    await message_obj = await ctx.respond("Please wait...")
+    
     resp = await wsRequest(f'{{"type": "getAccounts"}}')
     resp = json.loads(resp)
     accounts = resp["accounts"]
@@ -751,12 +754,13 @@ async def leaderboard(ctx):
         em.add_field(name=f"{count}. {address}", value=to_add, inline=False)
         count += 1
 
-    await ctx.respond(embed=em)
+    await message_obj.edit_original_message(embed=em)
 
 
 @bot.slash_command()
 async def claim(ctx):
     """Claim your daily MXC"""
+    message_obj = await ctx.respond("Please wait...")
 
     with open(f"{storageDir}timeouts.json") as f:
         old = json.load(f)
@@ -764,7 +768,7 @@ async def claim(ctx):
     try:
         if (old[str(ctx.author.id)] + 86400) > time.time():
             delay = (old[str(ctx.author.id)] + 86400) - time.time()
-            await ctx.respond(f"Please wait {int(delay//3600)} hours, {int((delay/60)%60)} minutes")
+            await message_obj.edit_original_message(content=f"Please wait {int(delay//3600)} hours, {int((delay/60)%60)} minutes")
             return
 
     except KeyError:
@@ -779,7 +783,6 @@ async def claim(ctx):
     address = base64.b32encode(publicKey.encode()).decode("utf-8").replace("=", "").lower()
     publicKeyStr = f"mxc_{address}{addressChecksum}"
 
-    message_obj = await ctx.respond("Attempting transaction...")
 
     with open(f"{storageDir}users.json") as f:
         users = json.load(f)
