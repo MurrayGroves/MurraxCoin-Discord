@@ -290,6 +290,7 @@ async def websocketPoolLoop():
             traceback.print_exc()
 
         except:
+            traceback.print_exc()
             pass
 
         if len(websocketPool.keys()) > 0:
