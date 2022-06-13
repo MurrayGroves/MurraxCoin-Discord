@@ -728,7 +728,7 @@ async def ping(ctx):
 
 @bot.slash_command()
 async def leaderboard(ctx):
-    await message_obj = await ctx.respond("Please wait...")
+    message_obj = await ctx.respond("Please wait...")
     
     resp = await wsRequest(f'{{"type": "getAccounts"}}')
     resp = json.loads(resp)
