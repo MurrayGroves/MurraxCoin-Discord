@@ -289,9 +289,11 @@ async def websocketPoolLoop():
         except ValueError:
             traceback.print_exc()
 
+        except TimeoutError:
+            pass
+            
         except:
             traceback.print_exc()
-            pass
 
         if len(websocketPool.keys()) > 0:
             poolKeys = list(websocketPool.keys())
