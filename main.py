@@ -287,7 +287,7 @@ async def websocketPoolLoop():
                 prevRequest = ""
 
         except ValueError:
-            traceback.print_exc()
+            pass
 
         except TimeoutError:
             pass
